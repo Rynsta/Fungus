@@ -1,0 +1,28 @@
+# Build output
+build/
+out/
+
+# Gradle caches and wrapper
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.classpath
+*.project
+*.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Fabric Loom / Minecraft dev artifacts
+run/
+remappedSrc/
+
+# Claude Code internal files
+.claude/

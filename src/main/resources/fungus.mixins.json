@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "io.github.ryn.fungus.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "HeldItemRendererMixin",
+    "LivingEntityMixin",
+    "InGameHudMixin",
+    "StatusEffectsDisplayMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
