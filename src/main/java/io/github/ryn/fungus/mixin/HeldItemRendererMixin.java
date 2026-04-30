@@ -1,5 +1,7 @@
 package io.github.ryn.fungus.mixin;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import io.github.ryn.fungus.feature.Viewmodel;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.render.command.OrderedRenderCommandQueue;
@@ -13,7 +15,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -81,15 +82,15 @@ public class HeldItemRendererMixin {
         applyRotAndScale(matrices);
     }
 
-    @Redirect(
+    @WrapOperation(
             method = "swingArm",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/math/MatrixStack;translate(FFF)V", ordinal = 0)
     )
-    private void fungus$onSwingArmTranslate(MatrixStack stack, float x, float y, float z) {
+    private void fungus$onSwingArmTranslate(MatrixStack stack, float x, float y, float z, Operation<Void> original) {
         if (Viewmodel.isActive()) {
-            stack.translate(x * (float) Viewmodel.swingX, y * (float) Viewmodel.swingY, z * (float) Viewmodel.swingZ);
+            original.call(stack, x * (float) Viewmodel.swingX, y * (float) Viewmodel.swingY, z * (float) Viewmodel.swingZ);
         } else {
-            stack.translate(x, y, z);
+            original.call(stack, x, y, z);
         }
     }
 

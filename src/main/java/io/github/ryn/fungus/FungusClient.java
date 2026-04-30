@@ -1,8 +1,10 @@
 package io.github.ryn.fungus;
 
 import io.github.ryn.fungus.config.ConfigManager;
+import io.github.ryn.fungus.gui.BlockHighlightScreen;
 import io.github.ryn.fungus.gui.FungusScreen;
 import io.github.ryn.fungus.gui.ViewmodelScreen;
+import io.github.ryn.fungus.renderer.BlockHighlightRenderer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -19,6 +21,7 @@ public class FungusClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ConfigManager.load();
+        BlockHighlightRenderer.register();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommandManager.literal("fungus")
@@ -31,6 +34,11 @@ public class FungusClient implements ClientModInitializer {
                         PENDING_SCREEN.set(parent -> new ViewmodelScreen(parent));
                         return 1;
                     }));
+            dispatcher.register(ClientCommandManager.literal("blockhighlight")
+                    .executes(ctx -> {
+                        PENDING_SCREEN.set(parent -> new BlockHighlightScreen(parent));
+                        return 1;
+                    }));
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -40,6 +48,6 @@ public class FungusClient implements ClientModInitializer {
             }
         });
 
-        Fungus.LOG.info("[Fungus] client init — /fungus and /viewmodel registered");
+        Fungus.LOG.info("[Fungus] client init — /fungus, /viewmodel, /blockhighlight registered");
     }
 }

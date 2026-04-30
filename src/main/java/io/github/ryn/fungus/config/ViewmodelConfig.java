@@ -1,5 +1,6 @@
 package io.github.ryn.fungus.config;
 
+import io.github.ryn.fungus.feature.BlockHighlight;
 import io.github.ryn.fungus.feature.Viewmodel;
 import io.github.ryn.fungus.module.PotionIconHiderModule;
 import io.github.ryn.fungus.module.ScoreboardHiderModule;
@@ -20,6 +21,13 @@ public class ViewmodelConfig {
     public boolean potionIconHiderEnabled = false;
     public boolean scoreboardHiderEnabled = false;
 
+    public boolean blockHighlightEnabled       = false;
+    public boolean blockHighlightFill          = true;
+    public boolean blockHighlightOutline       = true;
+    public boolean blockHighlightWrap          = true;
+    public int     blockHighlightFillColor     = 0x40FFFFFF;
+    public int     blockHighlightOutlineColor  = 0xC0FFFFFF;
+
     public static ViewmodelConfig fromLive() {
         ViewmodelConfig c = new ViewmodelConfig();
         c.enabled     = Viewmodel.enabled;
@@ -34,6 +42,12 @@ public class ViewmodelConfig {
         c.swingX  = Viewmodel.swingX;  c.swingY  = Viewmodel.swingY;  c.swingZ  = Viewmodel.swingZ;
         c.potionIconHiderEnabled = PotionIconHiderModule.enabled;
         c.scoreboardHiderEnabled = ScoreboardHiderModule.enabled;
+        c.blockHighlightEnabled      = BlockHighlight.enabled;
+        c.blockHighlightFill         = BlockHighlight.fillEnabled;
+        c.blockHighlightOutline      = BlockHighlight.outlineEnabled;
+        c.blockHighlightWrap         = BlockHighlight.wrapEnabled;
+        c.blockHighlightFillColor    = BlockHighlight.fillColor;
+        c.blockHighlightOutlineColor = BlockHighlight.outlineColor;
         return c;
     }
 
@@ -50,5 +64,11 @@ public class ViewmodelConfig {
         Viewmodel.swingX  = swingX;  Viewmodel.swingY  = swingY;  Viewmodel.swingZ  = swingZ;
         PotionIconHiderModule.enabled = potionIconHiderEnabled;
         ScoreboardHiderModule.enabled = scoreboardHiderEnabled;
+        BlockHighlight.enabled        = blockHighlightEnabled;
+        BlockHighlight.fillEnabled    = blockHighlightFill;
+        BlockHighlight.outlineEnabled = blockHighlightOutline;
+        BlockHighlight.wrapEnabled    = blockHighlightWrap;
+        BlockHighlight.fillColor      = blockHighlightFillColor;
+        BlockHighlight.outlineColor   = blockHighlightOutlineColor;
     }
 }

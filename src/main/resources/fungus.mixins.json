@@ -3,6 +3,7 @@
   "package": "io.github.ryn.fungus.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "CameraAccessor",
     "HeldItemRendererMixin",
     "LivingEntityMixin",
     "InGameHudMixin",

@@ -10,11 +10,13 @@ public final class Modules {
     public static final ViewmodelModule VIEWMODEL = new ViewmodelModule();
     public static final PotionIconHiderModule POTION_ICON_HIDER = new PotionIconHiderModule();
     public static final ScoreboardHiderModule SCOREBOARD_HIDER = new ScoreboardHiderModule();
+    public static final BlockHighlightModule BLOCK_HIGHLIGHT = new BlockHighlightModule();
 
     static {
         REGISTRY.add(VIEWMODEL);
         REGISTRY.add(POTION_ICON_HIDER);
         REGISTRY.add(SCOREBOARD_HIDER);
+        REGISTRY.add(BLOCK_HIGHLIGHT);
     }
 
     private Modules() {}
