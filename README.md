@@ -1,10 +1,8 @@
 ```
-fungus.client                                          v0.1.0
+fungus.client                                         
 ─────────────────────────────────────────────────────────────
-client-side qol mod  ·  fabric  ·  minecraft 1.21.11
+skyblock qol mod  ·  fabric  ·  minecraft 1.21.11
 ```
-
-A bundle of toggleable modules behind an in-game GUI styled after CSGO cheats.
 
 ## modules
 
