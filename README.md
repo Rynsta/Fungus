@@ -1,5 +1,5 @@
 ```
-fungus.client                                          v0.1.0
+fungus.client                                         
 ─────────────────────────────────────────────────────────────
 skyblock qol mod  ·  fabric  ·  minecraft 1.21.11
 ```
