@@ -2,9 +2,8 @@
 build/
 out/
 
-# Gradle caches and wrapper
+# Gradle caches
 .gradle/
-gradle/wrapper/gradle-wrapper.jar
 
 # IDE files
 .idea/
