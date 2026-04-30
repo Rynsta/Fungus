@@ -6,9 +6,9 @@ skyblock qol mod  ·  fabric  ·  minecraft 1.21.11
 
 ## modules
 
-- **viewmodel** — offset, scale, rotation, swing speed, no-haste, no-equip animation, no-bow-swing
-- **potion icon hider** — hides effect icons in the HUD and the inventory side panel
-- **scoreboard hider** — hides the vanilla / Hypixel sidebar scoreboard
+- **viewmodel** - offset, scale, rotation, swing speed, no-haste, no-equip animation, no-bow-swing
+- **potion icon hider** - hides effect icons in the HUD and the inventory side panel
+- **scoreboard hider** - hides the vanilla / Hypixel sidebar scoreboard
 - **block highlight** - highlights the colour you are currently looking at, with colour options
 
 ## commands
