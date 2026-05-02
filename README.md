@@ -32,6 +32,11 @@ Output → `build/libs/fungus-viewmodel-<version>.jar`. Drop into `mods/`.
 
 Minecraft **1.21.11**  ·  Fabric Loader **0.16+**  ·  Fabric API
 
+## credits
+- claude code
+- NoFrills
+- CHUD
+
 ## contributions/pull requests
 
 if you would like to contribute, feel free to open a pull request, and i will review it
