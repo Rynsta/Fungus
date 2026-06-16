@@ -2,8 +2,8 @@ package io.github.ryn.fungus.module;
 
 import io.github.ryn.fungus.feature.Viewmodel;
 import io.github.ryn.fungus.gui.ViewmodelScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 public class ViewmodelModule implements Module {
     public static final String ID = "viewmodel";
@@ -14,8 +14,8 @@ public class ViewmodelModule implements Module {
     }
 
     @Override
-    public Text displayName() {
-        return Text.translatable("fungus.module.viewmodel.name");
+    public Component displayName() {
+        return Component.translatable("fungus.module.viewmodel.name");
     }
 
     @Override

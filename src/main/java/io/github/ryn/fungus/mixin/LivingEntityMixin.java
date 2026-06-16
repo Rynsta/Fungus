@@ -1,13 +1,13 @@
 package io.github.ryn.fungus.mixin;
 
 import io.github.ryn.fungus.feature.Viewmodel;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.BowItem;
-import net.minecraft.item.CrossbowItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.TridentItem;
-import net.minecraft.util.Hand;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.TridentItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,7 +26,7 @@ public abstract class LivingEntityMixin {
     private boolean fungus$isCustomSwingTarget() {
         if (!Viewmodel.isActive()) return false;
         if (!Viewmodel.noHaste && Viewmodel.speed == 0.0) return false;
-        return (Object) this == MinecraftClient.getInstance().player;
+        return (Object) this == Minecraft.getInstance().player;
     }
 
     @Unique
@@ -34,24 +34,24 @@ public abstract class LivingEntityMixin {
         return Math.max(FUNGUS_MIN_DURATION, 6.0 - Viewmodel.speed);
     }
 
-    @Inject(method = "getHandSwingDuration", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getCurrentSwingDuration", at = @At("HEAD"), cancellable = true)
     private void fungus$swingDuration(CallbackInfoReturnable<Integer> cir) {
         if (!fungus$isCustomSwingTarget()) return;
         cir.setReturnValue(Math.max(1, (int) Math.round(fungus$durationF())));
     }
 
-    @Inject(method = "swingHand(Lnet/minecraft/util/Hand;Z)V", at = @At("HEAD"), cancellable = true)
-    private void fungus$noBowSwing(Hand hand, boolean fromServerPlayer, CallbackInfo ci) {
+    @Inject(method = "swing(Lnet/minecraft/world/InteractionHand;Z)V", at = @At("HEAD"), cancellable = true)
+    private void fungus$noBowSwing(InteractionHand hand, boolean updateSelf, CallbackInfo ci) {
         if (!Viewmodel.isActive() || !Viewmodel.noBowSwing) return;
-        if ((Object) this != MinecraftClient.getInstance().player) return;
-        Item it = ((LivingEntity) (Object) this).getStackInHand(hand).getItem();
+        if ((Object) this != Minecraft.getInstance().player) return;
+        Item it = ((LivingEntity) (Object) this).getItemInHand(hand).getItem();
         if (it instanceof BowItem || it instanceof CrossbowItem || it instanceof TridentItem) {
             ci.cancel();
         }
     }
 
-    @Inject(method = "swingHand(Lnet/minecraft/util/Hand;Z)V", at = @At("TAIL"))
-    private void fungus$onSwingStart(Hand hand, boolean fromServerPlayer, CallbackInfo ci) {
+    @Inject(method = "swing(Lnet/minecraft/world/InteractionHand;Z)V", at = @At("TAIL"))
+    private void fungus$onSwingStart(InteractionHand hand, boolean updateSelf, CallbackInfo ci) {
         if (!fungus$isCustomSwingTarget()) return;
         double durF = fungus$durationF();
         if (fungus$swingElapsed < 0.0 || fungus$swingElapsed >= durF / 2.0) {
@@ -59,7 +59,7 @@ public abstract class LivingEntityMixin {
         }
     }
 
-    @Inject(method = "tickHandSwing", at = @At("HEAD"))
+    @Inject(method = "updateSwingTime", at = @At("HEAD"))
     private void fungus$tickHandSwing(CallbackInfo ci) {
         if (!fungus$isCustomSwingTarget()) {
             fungus$swingElapsed = -1.0;
@@ -73,7 +73,7 @@ public abstract class LivingEntityMixin {
         }
     }
 
-    @Inject(method = "getHandSwingProgress", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getAttackAnim", at = @At("HEAD"), cancellable = true)
     private void fungus$getHandSwingProgress(float tickDelta, CallbackInfoReturnable<Float> cir) {
         if (!fungus$isCustomSwingTarget()) return;
         if (fungus$swingElapsed < 0.0) {

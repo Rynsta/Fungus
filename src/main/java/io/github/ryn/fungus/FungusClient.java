@@ -6,11 +6,11 @@ import io.github.ryn.fungus.gui.FungusScreen;
 import io.github.ryn.fungus.gui.ViewmodelScreen;
 import io.github.ryn.fungus.renderer.BlockHighlightRenderer;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -24,17 +24,17 @@ public class FungusClient implements ClientModInitializer {
         BlockHighlightRenderer.register();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("fungus")
+            dispatcher.register(ClientCommands.literal("fungus")
                     .executes(ctx -> {
                         PENDING_SCREEN.set(parent -> new FungusScreen(parent));
                         return 1;
                     }));
-            dispatcher.register(ClientCommandManager.literal("viewmodel")
+            dispatcher.register(ClientCommands.literal("viewmodel")
                     .executes(ctx -> {
                         PENDING_SCREEN.set(parent -> new ViewmodelScreen(parent));
                         return 1;
                     }));
-            dispatcher.register(ClientCommandManager.literal("blockhighlight")
+            dispatcher.register(ClientCommands.literal("blockhighlight")
                     .executes(ctx -> {
                         PENDING_SCREEN.set(parent -> new BlockHighlightScreen(parent));
                         return 1;
@@ -44,7 +44,7 @@ public class FungusClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             java.util.function.Function<Screen, Screen> factory = PENDING_SCREEN.getAndSet(null);
             if (factory != null) {
-                MinecraftClient.getInstance().setScreen(factory.apply(null));
+                Minecraft.getInstance().setScreen(factory.apply(null));
             }
         });
 

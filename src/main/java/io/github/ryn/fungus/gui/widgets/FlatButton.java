@@ -1,19 +1,19 @@
 package io.github.ryn.fungus.gui.widgets;
 
 import io.github.ryn.fungus.gui.Theme;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.network.chat.Component;
 
-public class FlatButton extends ClickableWidget {
+public class FlatButton extends AbstractWidget {
     private final Runnable onPress;
-    private final TextRenderer tr;
+    private final Font tr;
     private final boolean accent;
 
-    public FlatButton(int x, int y, int w, int h, Text label, TextRenderer tr,
+    public FlatButton(int x, int y, int w, int h, Component label, Font tr,
                       boolean accent, Runnable onPress) {
         super(x, y, w, h, label);
         this.onPress = onPress;
@@ -22,7 +22,7 @@ public class FlatButton extends ClickableWidget {
     }
 
     @Override
-    public void renderWidget(DrawContext ctx, int mx, int my, float delta) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor ctx, int mx, int my, float delta) {
         boolean hovered = isHovered();
         int x0 = getX(), y0 = getY(), x1 = getRight(), y1 = getY() + getHeight();
 
@@ -39,20 +39,20 @@ public class FlatButton extends ClickableWidget {
             ctx.fill(x1 - 1, y0, x1, y1, border);
         }
 
-        Text label = getMessage();
+        Component label = getMessage();
         int textColor = accent ? 0xFF000000 : (hovered ? Theme.TEXT_BRIGHT : Theme.TEXT);
-        int textX = x0 + (getWidth() - tr.getWidth(label)) / 2;
-        int textY = y0 + (getHeight() - tr.fontHeight) / 2;
-        ctx.drawText(tr, label, textX, textY, textColor, false);
+        int textX = x0 + (getWidth() - tr.width(label)) / 2;
+        int textY = y0 + (getHeight() - tr.lineHeight) / 2;
+        ctx.text(tr, label, textX, textY, textColor, false);
     }
 
     @Override
-    public void onClick(Click click, boolean doubled) {
+    public void onClick(MouseButtonEvent click, boolean doubled) {
         onPress.run();
     }
 
     @Override
-    public void appendClickableNarrations(NarrationMessageBuilder builder) {
-        appendDefaultNarrations(builder);
+    protected void updateWidgetNarration(NarrationElementOutput builder) {
+        defaultButtonNarrationText(builder);
     }
 }

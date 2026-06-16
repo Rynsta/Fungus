@@ -5,9 +5,9 @@ import io.github.ryn.fungus.gui.widgets.FlatButton;
 import io.github.ryn.fungus.gui.widgets.ModuleRowWidget;
 import io.github.ryn.fungus.module.Module;
 import io.github.ryn.fungus.module.Modules;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 public class FungusScreen extends Screen {
     private final Screen parent;
@@ -24,7 +24,7 @@ public class FungusScreen extends Screen {
     private int panelX, panelY;
 
     public FungusScreen(Screen parent) {
-        super(Text.translatable("fungus.title"));
+        super(Component.translatable("fungus.title"));
         this.parent = parent;
     }
 
@@ -38,27 +38,27 @@ public class FungusScreen extends Screen {
         int rowY = panelY + TITLE_BAR_H + SECTION_H;
 
         for (Module module : Modules.all()) {
-            addDrawableChild(new ModuleRowWidget(
-                    rowX, rowY, rowW, ROW_H, this.textRenderer, module, this::openSettings));
+            addRenderableWidget(new ModuleRowWidget(
+                    rowX, rowY, rowW, ROW_H, this.font, module, this::openSettings));
             rowY += ROW_H + ROW_GAP;
         }
 
         int closeW = 80;
         int closeX = panelX + PANEL_W - LIST_PAD - closeW;
         int closeY = panelY + PANEL_H - FOOTER_H + 4;
-        addDrawableChild(new FlatButton(closeX, closeY, closeW, 14,
-                Text.translatable("fungus.done"), this.textRenderer, true, this::close));
+        addRenderableWidget(new FlatButton(closeX, closeY, closeW, 14,
+                Component.translatable("fungus.done"), this.font, true, this::onClose));
     }
 
     private void openSettings(Module module) {
         Screen settings = module.createSettingsScreen(this);
-        if (settings != null && this.client != null) {
-            this.client.setScreen(settings);
+        if (settings != null && this.minecraft != null) {
+            this.minecraft.setScreen(settings);
         }
     }
 
     @Override
-    public void render(DrawContext ctx, int mx, int my, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mx, int my, float delta) {
         ctx.fill(0, 0, this.width, this.height, Theme.SCRIM);
 
         int x0 = panelX, y0 = panelY;
@@ -70,32 +70,32 @@ public class FungusScreen extends Screen {
         ctx.fill(x0, y0 + TITLE_BAR_H, x1, y0 + TITLE_BAR_H + 1, Theme.DIVIDER);
 
         int titleX = x0 + LIST_PAD;
-        int titleY = y0 + (TITLE_BAR_H - this.textRenderer.fontHeight) / 2 + 2;
-        ctx.drawText(this.textRenderer, "fungus", titleX, titleY, Theme.TEXT_BRIGHT, false);
-        int afterTitle = titleX + this.textRenderer.getWidth("fungus");
-        ctx.drawText(this.textRenderer, ".client", afterTitle, titleY, Theme.ACCENT, false);
+        int titleY = y0 + (TITLE_BAR_H - this.font.lineHeight) / 2 + 2;
+        ctx.text(this.font, "fungus", titleX, titleY, Theme.TEXT_BRIGHT, false);
+        int afterTitle = titleX + this.font.width("fungus");
+        ctx.text(this.font, ".client", afterTitle, titleY, Theme.ACCENT, false);
 
         String version = "v0.1.0";
-        int verW = this.textRenderer.getWidth(version);
-        ctx.drawText(this.textRenderer, version, x1 - LIST_PAD - verW, titleY, Theme.TEXT_DIM, false);
+        int verW = this.font.width(version);
+        ctx.text(this.font, version, x1 - LIST_PAD - verW, titleY, Theme.TEXT_DIM, false);
 
-        ctx.drawText(this.textRenderer, "MODULES",
+        ctx.text(this.font, "MODULES",
                 x0 + LIST_PAD, y0 + TITLE_BAR_H + 5, Theme.TEXT_DIM, false);
-        int sectionLineX = x0 + LIST_PAD + this.textRenderer.getWidth("MODULES") + 6;
+        int sectionLineX = x0 + LIST_PAD + this.font.width("MODULES") + 6;
         ctx.fill(sectionLineX, y0 + TITLE_BAR_H + 8, x1 - LIST_PAD,
                 y0 + TITLE_BAR_H + 9, Theme.DIVIDER);
 
-        super.render(ctx, mx, my, delta);
+        super.extractRenderState(ctx, mx, my, delta);
 
         ctx.fill(x0, y1 - FOOTER_H, x1, y1 - FOOTER_H + 1, Theme.DIVIDER);
         String hint = "[ESC] CLOSE";
-        ctx.drawText(this.textRenderer, hint,
+        ctx.text(this.font, hint,
                 x0 + LIST_PAD, y1 - FOOTER_H + 8, Theme.TEXT_DIM, false);
 
         drawBorder(ctx, x0, y0, PANEL_W, PANEL_H, Theme.BORDER);
     }
 
-    private static void drawBorder(DrawContext ctx, int x, int y, int w, int h, int color) {
+    private static void drawBorder(GuiGraphicsExtractor ctx, int x, int y, int w, int h, int color) {
         ctx.fill(x, y, x + w, y + 1, color);
         ctx.fill(x, y + h - 1, x + w, y + h, color);
         ctx.fill(x, y, x + 1, y + h, color);
@@ -103,13 +103,13 @@ public class FungusScreen extends Screen {
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 
     @Override
-    public void close() {
-        if (this.client != null) this.client.setScreen(parent);
+    public void onClose() {
+        if (this.minecraft != null) this.minecraft.setScreen(parent);
     }
 
     @Override

@@ -1,6 +1,6 @@
 package io.github.ryn.fungus.module;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public class ScoreboardHiderModule implements Module {
     public static final String ID = "scoreboard_hider";
@@ -13,8 +13,8 @@ public class ScoreboardHiderModule implements Module {
     }
 
     @Override
-    public Text displayName() {
-        return Text.translatable("fungus.module.scoreboardHider.name");
+    public Component displayName() {
+        return Component.translatable("fungus.module.scoreboardHider.name");
     }
 
     @Override

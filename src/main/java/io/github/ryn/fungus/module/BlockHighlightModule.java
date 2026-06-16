@@ -2,8 +2,8 @@ package io.github.ryn.fungus.module;
 
 import io.github.ryn.fungus.feature.BlockHighlight;
 import io.github.ryn.fungus.gui.BlockHighlightScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 public class BlockHighlightModule implements Module {
     public static final String ID = "block_highlight";
@@ -14,8 +14,8 @@ public class BlockHighlightModule implements Module {
     }
 
     @Override
-    public Text displayName() {
-        return Text.translatable("fungus.module.blockHighlight.name");
+    public Component displayName() {
+        return Component.translatable("fungus.module.blockHighlight.name");
     }
 
     @Override

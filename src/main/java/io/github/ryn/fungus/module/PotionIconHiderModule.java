@@ -1,6 +1,6 @@
 package io.github.ryn.fungus.module;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public class PotionIconHiderModule implements Module {
     public static final String ID = "potion_icon_hider";
@@ -13,8 +13,8 @@ public class PotionIconHiderModule implements Module {
     }
 
     @Override
-    public Text displayName() {
-        return Text.translatable("fungus.module.potionIconHider.name");
+    public Component displayName() {
+        return Component.translatable("fungus.module.potionIconHider.name");
     }
 
     @Override

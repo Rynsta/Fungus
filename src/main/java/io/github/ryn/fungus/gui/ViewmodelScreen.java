@@ -5,9 +5,9 @@ import io.github.ryn.fungus.feature.Viewmodel;
 import io.github.ryn.fungus.gui.widgets.FlatButton;
 import io.github.ryn.fungus.gui.widgets.FlatSlider;
 import io.github.ryn.fungus.gui.widgets.FlatToggle;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
@@ -27,7 +27,7 @@ public class ViewmodelScreen extends Screen {
     private int panelX, panelY;
 
     public ViewmodelScreen(Screen parent) {
-        super(Text.translatable("fungus.viewmodel.title"));
+        super(Component.translatable("fungus.viewmodel.title"));
         this.parent = parent;
     }
 
@@ -42,24 +42,24 @@ public class ViewmodelScreen extends Screen {
 
         int y = panelY + TITLE_BAR_H + SECTION_H;
 
-        addDrawableChild(new FlatToggle(leftX, y, colW, ROW_H, this.textRenderer,
-                Text.translatable("fungus.viewmodel.enabled"),
+        addRenderableWidget(new FlatToggle(leftX, y, colW, ROW_H, this.font,
+                Component.translatable("fungus.viewmodel.enabled"),
                 () -> Viewmodel.enabled, v -> Viewmodel.enabled = v));
-        addDrawableChild(new FlatToggle(rightX, y, colW, ROW_H, this.textRenderer,
-                Text.translatable("fungus.viewmodel.applyToHand"),
+        addRenderableWidget(new FlatToggle(rightX, y, colW, ROW_H, this.font,
+                Component.translatable("fungus.viewmodel.applyToHand"),
                 () -> Viewmodel.applyToHand, v -> Viewmodel.applyToHand = v));
         y += ROW_H + GAP;
 
-        addDrawableChild(new FlatToggle(leftX, y, colW, ROW_H, this.textRenderer,
-                Text.translatable("fungus.viewmodel.noHaste"),
+        addRenderableWidget(new FlatToggle(leftX, y, colW, ROW_H, this.font,
+                Component.translatable("fungus.viewmodel.noHaste"),
                 () -> Viewmodel.noHaste, v -> Viewmodel.noHaste = v));
-        addDrawableChild(new FlatToggle(rightX, y, colW, ROW_H, this.textRenderer,
-                Text.translatable("fungus.viewmodel.noEquipAnim"),
+        addRenderableWidget(new FlatToggle(rightX, y, colW, ROW_H, this.font,
+                Component.translatable("fungus.viewmodel.noEquipAnim"),
                 () -> Viewmodel.noEquip, v -> Viewmodel.noEquip = v));
         y += ROW_H + GAP;
 
-        addDrawableChild(new FlatToggle(leftX, y, colW * 2 + GAP, ROW_H, this.textRenderer,
-                Text.translatable("fungus.viewmodel.noBowSwing"),
+        addRenderableWidget(new FlatToggle(leftX, y, colW * 2 + GAP, ROW_H, this.font,
+                Component.translatable("fungus.viewmodel.noBowSwing"),
                 () -> Viewmodel.noBowSwing, v -> Viewmodel.noBowSwing = v));
         y += ROW_H + GAP * 2;
 
@@ -93,19 +93,19 @@ public class ViewmodelScreen extends Screen {
 
         int btnW = 90, btnH = 14;
         int btnY = panelY + PANEL_H - FOOTER_H + 7;
-        addDrawableChild(new FlatButton(leftX, btnY, btnW, btnH,
-                Text.translatable("fungus.viewmodel.reset"), this.textRenderer, false, () -> {
+        addRenderableWidget(new FlatButton(leftX, btnY, btnW, btnH,
+                Component.translatable("fungus.viewmodel.reset"), this.font, false, () -> {
                     Viewmodel.resetDefaults();
                     rebuild();
                 }));
-        addDrawableChild(new FlatButton(panelX + PANEL_W - LIST_PAD - btnW, btnY, btnW, btnH,
-                Text.translatable("fungus.back"), this.textRenderer, true, this::close));
+        addRenderableWidget(new FlatButton(panelX + PANEL_W - LIST_PAD - btnW, btnY, btnW, btnH,
+                Component.translatable("fungus.back"), this.font, true, this::onClose));
     }
 
     private void addSlider(int x, int y, int w, String key,
                            DoubleSupplier g, DoubleConsumer s, double min, double max) {
-        addDrawableChild(new FlatSlider(x, y, w, ROW_H, this.textRenderer,
-                Text.translatable(key), g, s, min, max));
+        addRenderableWidget(new FlatSlider(x, y, w, ROW_H, this.font,
+                Component.translatable(key), g, s, min, max));
     }
 
     private void addRow(int leftX, int rightX, int colW, int y,
@@ -116,12 +116,12 @@ public class ViewmodelScreen extends Screen {
     }
 
     private void rebuild() {
-        this.clearChildren();
+        this.clearWidgets();
         this.init();
     }
 
     @Override
-    public void render(DrawContext ctx, int mx, int my, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mx, int my, float delta) {
         ctx.fill(0, 0, this.width, this.height, Theme.SCRIM);
 
         int x0 = panelX, y0 = panelY;
@@ -132,29 +132,29 @@ public class ViewmodelScreen extends Screen {
         ctx.fill(x0, y0, x1, y0 + 2, Theme.ACCENT);
         ctx.fill(x0, y0 + TITLE_BAR_H, x1, y0 + TITLE_BAR_H + 1, Theme.DIVIDER);
 
-        int titleY = y0 + (TITLE_BAR_H - this.textRenderer.fontHeight) / 2 + 2;
-        ctx.drawText(this.textRenderer, "fungus", x0 + LIST_PAD, titleY, Theme.TEXT_BRIGHT, false);
-        int after = x0 + LIST_PAD + this.textRenderer.getWidth("fungus");
-        ctx.drawText(this.textRenderer, ".viewmodel", after, titleY, Theme.ACCENT, false);
+        int titleY = y0 + (TITLE_BAR_H - this.font.lineHeight) / 2 + 2;
+        ctx.text(this.font, "fungus", x0 + LIST_PAD, titleY, Theme.TEXT_BRIGHT, false);
+        int after = x0 + LIST_PAD + this.font.width("fungus");
+        ctx.text(this.font, ".viewmodel", after, titleY, Theme.ACCENT, false);
 
         String hint = "[ESC] BACK";
-        int hintW = this.textRenderer.getWidth(hint);
-        ctx.drawText(this.textRenderer, hint, x1 - LIST_PAD - hintW, titleY, Theme.TEXT_DIM, false);
+        int hintW = this.font.width(hint);
+        ctx.text(this.font, hint, x1 - LIST_PAD - hintW, titleY, Theme.TEXT_DIM, false);
 
-        ctx.drawText(this.textRenderer, "SETTINGS",
+        ctx.text(this.font, "SETTINGS",
                 x0 + LIST_PAD, y0 + TITLE_BAR_H + 5, Theme.TEXT_DIM, false);
-        int sectionLineX = x0 + LIST_PAD + this.textRenderer.getWidth("SETTINGS") + 6;
+        int sectionLineX = x0 + LIST_PAD + this.font.width("SETTINGS") + 6;
         ctx.fill(sectionLineX, y0 + TITLE_BAR_H + 8, x1 - LIST_PAD,
                 y0 + TITLE_BAR_H + 9, Theme.DIVIDER);
 
-        super.render(ctx, mx, my, delta);
+        super.extractRenderState(ctx, mx, my, delta);
 
         ctx.fill(x0, y1 - FOOTER_H, x1, y1 - FOOTER_H + 1, Theme.DIVIDER);
 
         drawBorder(ctx, x0, y0, PANEL_W, PANEL_H, Theme.BORDER);
     }
 
-    private static void drawBorder(DrawContext ctx, int x, int y, int w, int h, int color) {
+    private static void drawBorder(GuiGraphicsExtractor ctx, int x, int y, int w, int h, int color) {
         ctx.fill(x, y, x + w, y + 1, color);
         ctx.fill(x, y + h - 1, x + w, y + h, color);
         ctx.fill(x, y, x + 1, y + h, color);
@@ -162,13 +162,13 @@ public class ViewmodelScreen extends Screen {
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 
     @Override
-    public void close() {
-        if (this.client != null) this.client.setScreen(parent);
+    public void onClose() {
+        if (this.minecraft != null) this.minecraft.setScreen(parent);
     }
 
     @Override

@@ -1,21 +1,21 @@
 package io.github.ryn.fungus.gui.widgets;
 
 import io.github.ryn.fungus.gui.Theme;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.network.chat.Component;
 
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 
-public class FlatColorRow extends ClickableWidget {
-    private final Text label;
+public class FlatColorRow extends AbstractWidget {
+    private final Component label;
     private final IntSupplier getter;
     private final IntConsumer setter;
-    private final TextRenderer tr;
+    private final Font tr;
 
     private static final int LABEL_W   = 78;
     private static final int SWATCH_W  = 18;
@@ -25,7 +25,7 @@ public class FlatColorRow extends ClickableWidget {
 
     private int dragChannel = -1;
 
-    public FlatColorRow(int x, int y, int w, int h, TextRenderer tr, Text label,
+    public FlatColorRow(int x, int y, int w, int h, Font tr, Component label,
                         IntSupplier getter, IntConsumer setter) {
         super(x, y, w, h, label);
         this.label = label;
@@ -35,7 +35,7 @@ public class FlatColorRow extends ClickableWidget {
     }
 
     @Override
-    public void renderWidget(DrawContext ctx, int mx, int my, float delta) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor ctx, int mx, int my, float delta) {
         boolean hovered = isHovered();
         int x0 = getX(), y0 = getY(), x1 = getRight(), y1 = getY() + getHeight();
 
@@ -47,7 +47,7 @@ public class FlatColorRow extends ClickableWidget {
         int b =  color        & 0xFF;
         int a = (color >> 24) & 0xFF;
 
-        ctx.drawText(tr, label, x0 + 8, y0 + (getHeight() - tr.fontHeight) / 2, Theme.TEXT, false);
+        ctx.text(tr, label, x0 + 8, y0 + (getHeight() - tr.lineHeight) / 2, Theme.TEXT, false);
 
         int swatchX = x0 + LABEL_W;
         int swatchY = y0 + 3;
@@ -74,7 +74,7 @@ public class FlatColorRow extends ClickableWidget {
         }
     }
 
-    private void renderChannel(DrawContext ctx, int x, int y, int w, int h,
+    private void renderChannel(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                String name, int value, int tint, boolean active) {
         int trackY = y + h - 4;
         ctx.fill(x, trackY, x + w, trackY + 1, Theme.DIVIDER);
@@ -85,13 +85,13 @@ public class FlatColorRow extends ClickableWidget {
         ctx.fill(knobX, trackY - 2, knobX + 2, trackY + 3, active ? Theme.ACCENT : tint);
 
         int textY = y + 3;
-        ctx.drawText(tr, name, x + 2, textY, Theme.TEXT_DIM, false);
+        ctx.text(tr, name, x + 2, textY, Theme.TEXT_DIM, false);
         String v = Integer.toString(value);
-        int vw = tr.getWidth(v);
-        ctx.drawText(tr, v, x + w - vw - 2, textY, active ? Theme.ACCENT : Theme.TEXT, false);
+        int vw = tr.width(v);
+        ctx.text(tr, v, x + w - vw - 2, textY, active ? Theme.ACCENT : Theme.TEXT, false);
     }
 
-    private static void drawCheckerboard(DrawContext ctx, int x, int y, int w, int h) {
+    private static void drawCheckerboard(GuiGraphicsExtractor ctx, int x, int y, int w, int h) {
         int cell = 4;
         for (int yy = 0; yy < h; yy += cell) {
             for (int xx = 0; xx < w; xx += cell) {
@@ -103,7 +103,7 @@ public class FlatColorRow extends ClickableWidget {
         }
     }
 
-    private static void drawBorder(DrawContext ctx, int x, int y, int w, int h) {
+    private static void drawBorder(GuiGraphicsExtractor ctx, int x, int y, int w, int h) {
         ctx.fill(x, y, x + w, y + 1, Theme.BORDER);
         ctx.fill(x, y + h - 1, x + w, y + h, Theme.BORDER);
         ctx.fill(x, y, x + 1, y + h, Theme.BORDER);
@@ -144,7 +144,7 @@ public class FlatColorRow extends ClickableWidget {
     }
 
     @Override
-    public void onClick(Click click, boolean doubled) {
+    public void onClick(MouseButtonEvent click, boolean doubled) {
         int ch = channelAt(click.x());
         if (ch >= 0) {
             dragChannel = ch;
@@ -153,19 +153,19 @@ public class FlatColorRow extends ClickableWidget {
     }
 
     @Override
-    protected void onDrag(Click click, double offsetX, double offsetY) {
+    protected void onDrag(MouseButtonEvent click, double offsetX, double offsetY) {
         if (dragChannel >= 0) {
             applyChannel(dragChannel, click.x());
         }
     }
 
     @Override
-    public void onRelease(Click click) {
+    public void onRelease(MouseButtonEvent click) {
         dragChannel = -1;
     }
 
     @Override
-    public void appendClickableNarrations(NarrationMessageBuilder builder) {
-        appendDefaultNarrations(builder);
+    protected void updateWidgetNarration(NarrationElementOutput builder) {
+        defaultButtonNarrationText(builder);
     }
 }
