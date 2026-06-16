@@ -1,7 +1,7 @@
 ```
 fungus.client                                         
 ─────────────────────────────────────────────────────────────
-skyblock qol mod  ·  fabric  ·  minecraft 1.21.11
+skyblock qol mod  ·  fabric  ·  minecraft 26.1.2
 ```
 
 ## modules
