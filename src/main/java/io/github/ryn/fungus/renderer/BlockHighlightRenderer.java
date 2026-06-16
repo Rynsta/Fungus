@@ -1,72 +1,77 @@
 package io.github.ryn.fungus.renderer;
 
+import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import io.github.ryn.fungus.feature.BlockHighlight;
-import io.github.ryn.fungus.mixin.CameraAccessor;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.RenderSetup;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
+import io.github.ryn.fungus.mixin.RenderTypeInvoker;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.List;
+import java.util.Optional;
 
 public class BlockHighlightRenderer {
 
     private static final float OFFSET = 0.002f;
 
-    private static final RenderPipeline HIGHLIGHT_FILL_PIPELINE = RenderPipelines.register(
-            RenderPipeline.builder(RenderPipelines.POSITION_COLOR_SNIPPET)
-                    .withLocation("fungus/block_highlight_fill")
-                    .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
-                    .withDepthWrite(false)
-                    .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.TRIANGLE_STRIP)
-                    .build()
-    );
+    private static RenderPipeline.Snippet snippetFrom(RenderPipeline base) {
+        return new RenderPipeline.Snippet(
+                Optional.of(base.getVertexShader()), Optional.of(base.getFragmentShader()),
+                Optional.of(base.getShaderDefines()), Optional.of(base.getSamplers()),
+                Optional.of(base.getUniforms()), Optional.of(base.getColorTargetState()),
+                Optional.of(base.getDepthStencilState()), Optional.of(base.getPolygonMode()),
+                Optional.of(base.isCull()), Optional.of(base.getVertexFormat()),
+                Optional.of(base.getVertexFormatMode()));
+    }
 
-    private static final RenderLayer HIGHLIGHT_FILL_LAYER = RenderLayer.of(
+    private static final RenderPipeline HIGHLIGHT_FILL_PIPELINE = RenderPipeline.builder(snippetFrom(RenderPipelines.DEBUG_FILLED_BOX))
+            .withLocation("fungus/block_highlight_fill")
+            .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLE_STRIP)
+            .build();
+
+    private static final RenderType HIGHLIGHT_FILL_LAYER = RenderTypeInvoker.invokeCreate(
             "fungus_block_highlight_fill",
-            RenderSetup.builder(HIGHLIGHT_FILL_PIPELINE)
-                    .expectedBufferSize(1536)
-                    .translucent()
-                    .build()
+            RenderSetup.builder(HIGHLIGHT_FILL_PIPELINE).bufferSize(1536).sortOnUpload().createRenderSetup()
     );
 
     public static void register() {
-        WorldRenderEvents.BEFORE_TRANSLUCENT.register(BlockHighlightRenderer::render);
+        LevelRenderEvents.BEFORE_TRANSLUCENT_TERRAIN.register(BlockHighlightRenderer::render);
     }
 
-    private static void render(WorldRenderContext context) {
+    private static void render(LevelRenderContext context) {
         if (!BlockHighlight.enabled) return;
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.world == null || client.player == null) return;
+        Minecraft client = Minecraft.getInstance();
+        if (client.level == null || client.player == null) return;
 
-        HitResult hitResult = client.crosshairTarget;
+        HitResult hitResult = client.hitResult;
         if (hitResult == null || hitResult.getType() != HitResult.Type.BLOCK) return;
 
         BlockHitResult blockHit = (BlockHitResult) hitResult;
         BlockPos pos = blockHit.getBlockPos();
 
-        Vec3d cameraPos = ((CameraAccessor) client.gameRenderer.getCamera()).fungus$getPos();
-        MatrixStack matrices = context.matrices();
-        VertexConsumerProvider vertexConsumers = context.consumers();
+        Vec3 cameraPos = client.gameRenderer.getMainCamera().position();
+        PoseStack matrices = context.poseStack();
+        MultiBufferSource vertexConsumers = context.bufferSource();
         if (vertexConsumers == null) return;
 
         float fillR = 0, fillG = 0, fillB = 0, fillA = 0;
@@ -87,36 +92,36 @@ public class BlockHighlightRenderer {
             outA = ((c >> 24) & 0xFF) / 255.0f;
         }
 
-        matrices.push();
+        matrices.pushPose();
         matrices.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
 
         if (BlockHighlight.wrapEnabled) {
-            BlockState state = client.world.getBlockState(pos);
-            VoxelShape shape = state.getOutlineShape(client.world, pos, ShapeContext.of(client.player));
-            List<Box> boxes = shape.getBoundingBoxes();
+            BlockState state = client.level.getBlockState(pos);
+            VoxelShape shape = state.getShape(client.level, pos, CollisionContext.of(client.player));
+            List<AABB> boxes = shape.toAabbs();
             if (boxes.isEmpty()) {
-                matrices.pop();
+                matrices.popPose();
                 return;
             }
 
             if (BlockHighlight.fillEnabled) {
-                for (Box box : boxes) {
+                for (AABB box : boxes) {
                     float x1 = (float)(pos.getX() + box.minX) - OFFSET;
                     float y1 = (float)(pos.getY() + box.minY) - OFFSET;
                     float z1 = (float)(pos.getZ() + box.minZ) - OFFSET;
                     float x2 = (float)(pos.getX() + box.maxX) + OFFSET;
                     float y2 = (float)(pos.getY() + box.maxY) + OFFSET;
                     float z2 = (float)(pos.getZ() + box.maxZ) + OFFSET;
-                    drawFilledBox(vertexConsumers, matrices.peek(), x1, y1, z1, x2, y2, z2, fillR, fillG, fillB, fillA);
+                    drawFilledBox(vertexConsumers, matrices.last(), x1, y1, z1, x2, y2, z2, fillR, fillG, fillB, fillA);
                 }
             }
 
             if (BlockHighlight.outlineEnabled) {
-                VertexConsumer lineBuffer = vertexConsumers.getBuffer(RenderLayers.LINES);
-                MatrixStack.Entry entry = matrices.peek();
+                VertexConsumer lineBuffer = vertexConsumers.getBuffer(HIGHLIGHT_FILL_LAYER);
+                PoseStack.Pose entry = matrices.last();
                 final float fr = outR, fg = outG, fb = outB, fa = outA;
-                Box bb = shape.getBoundingBox();
-                shape.forEachEdge((x1e, y1e, z1e, x2e, y2e, z2e) ->
+                AABB bb = shape.bounds();
+                shape.forAllEdges((x1e, y1e, z1e, x2e, y2e, z2e) ->
                         drawLine(lineBuffer, entry,
                                 (float)(pos.getX() + nudge(x1e, bb.minX, bb.maxX)),
                                 (float)(pos.getY() + nudge(y1e, bb.minY, bb.maxY)),
@@ -136,22 +141,23 @@ public class BlockHighlightRenderer {
             float z2 = pos.getZ() + 1 + OFFSET;
 
             if (BlockHighlight.fillEnabled) {
-                drawFilledBox(vertexConsumers, matrices.peek(), x1, y1, z1, x2, y2, z2, fillR, fillG, fillB, fillA);
+                drawFilledBox(vertexConsumers, matrices.last(), x1, y1, z1, x2, y2, z2, fillR, fillG, fillB, fillA);
             }
             if (BlockHighlight.outlineEnabled) {
-                VertexConsumer lineBuffer = vertexConsumers.getBuffer(RenderLayers.LINES);
-                drawBoxOutline(lineBuffer, matrices.peek(), x1, y1, z1, x2, y2, z2, outR, outG, outB, outA);
+                VertexConsumer lineBuffer = vertexConsumers.getBuffer(HIGHLIGHT_FILL_LAYER);
+                drawBoxOutline(lineBuffer, matrices.last(), x1, y1, z1, x2, y2, z2, outR, outG, outB, outA);
             }
         }
 
-        matrices.pop();
+        matrices.popPose();
     }
 
-    private static void drawFilledBox(VertexConsumerProvider consumers, MatrixStack.Entry matrix,
+    private static void drawFilledBox(MultiBufferSource consumers, PoseStack.Pose matrix,
                                       float x1, float y1, float z1, float x2, float y2, float z2,
                                       float r, float g, float b, float a) {
         VertexConsumer buf = consumers.getBuffer(HIGHLIGHT_FILL_LAYER);
 
+        // South face (+z)
         vert(buf, matrix, x1, y1, z2, r, g, b, a);
         vert(buf, matrix, x2, y1, z2, r, g, b, a);
         vert(buf, matrix, x1, y2, z2, r, g, b, a);
@@ -159,6 +165,7 @@ public class BlockHighlightRenderer {
         vert(buf, matrix, x2, y2, z2, r, g, b, a);
         vert(buf, matrix, x2, y1, z1, r, g, b, a);
 
+        // North face (-z)
         vert(buf, matrix, x2, y1, z1, r, g, b, a);
         vert(buf, matrix, x1, y1, z1, r, g, b, a);
         vert(buf, matrix, x2, y2, z1, r, g, b, a);
@@ -166,6 +173,7 @@ public class BlockHighlightRenderer {
         vert(buf, matrix, x1, y2, z1, r, g, b, a);
         vert(buf, matrix, x1, y1, z1, r, g, b, a);
 
+        // Bottom face (-y)
         vert(buf, matrix, x1, y1, z1, r, g, b, a);
         vert(buf, matrix, x2, y1, z1, r, g, b, a);
         vert(buf, matrix, x1, y1, z2, r, g, b, a);
@@ -173,6 +181,7 @@ public class BlockHighlightRenderer {
         vert(buf, matrix, x2, y1, z2, r, g, b, a);
         vert(buf, matrix, x1, y2, z2, r, g, b, a);
 
+        // Top face (+y)
         vert(buf, matrix, x1, y2, z2, r, g, b, a);
         vert(buf, matrix, x2, y2, z2, r, g, b, a);
         vert(buf, matrix, x1, y2, z1, r, g, b, a);
@@ -180,6 +189,7 @@ public class BlockHighlightRenderer {
         vert(buf, matrix, x2, y2, z1, r, g, b, a);
         vert(buf, matrix, x1, y1, z1, r, g, b, a);
 
+        // West face (-x)
         vert(buf, matrix, x1, y1, z1, r, g, b, a);
         vert(buf, matrix, x1, y1, z2, r, g, b, a);
         vert(buf, matrix, x1, y2, z1, r, g, b, a);
@@ -187,30 +197,37 @@ public class BlockHighlightRenderer {
         vert(buf, matrix, x1, y2, z2, r, g, b, a);
         vert(buf, matrix, x2, y1, z2, r, g, b, a);
 
+        // East face (+x)
         vert(buf, matrix, x2, y1, z2, r, g, b, a);
         vert(buf, matrix, x2, y1, z1, r, g, b, a);
         vert(buf, matrix, x2, y2, z2, r, g, b, a);
+        vert(buf, matrix, x2, y2, z1, r, g, b, a);
+        // Trailing degenerate: isolates this box from whatever follows in the shared strip
+        // (outline edges, or the next box in wrap mode), so no stray bridge triangle.
         vert(buf, matrix, x2, y2, z1, r, g, b, a);
     }
 
-    private static void vert(VertexConsumer buf, MatrixStack.Entry matrix,
+    private static void vert(VertexConsumer buf, PoseStack.Pose matrix,
                              float x, float y, float z, float r, float g, float b, float a) {
-        buf.vertex(matrix, x, y, z).color(r, g, b, a);
+        buf.addVertex(matrix, x, y, z).setColor(r, g, b, a);
     }
 
-    private static void drawBoxOutline(VertexConsumer buf, MatrixStack.Entry matrix,
+    private static void drawBoxOutline(VertexConsumer buf, PoseStack.Pose matrix,
                                        float x1, float y1, float z1, float x2, float y2, float z2,
                                        float r, float g, float b, float a) {
+        // Bottom face edges
         drawLine(buf, matrix, x1, y1, z1, x2, y1, z1, r, g, b, a);
         drawLine(buf, matrix, x2, y1, z1, x2, y1, z2, r, g, b, a);
         drawLine(buf, matrix, x2, y1, z2, x1, y1, z2, r, g, b, a);
         drawLine(buf, matrix, x1, y1, z2, x1, y1, z1, r, g, b, a);
 
+        // Top face edges
         drawLine(buf, matrix, x1, y2, z1, x2, y2, z1, r, g, b, a);
         drawLine(buf, matrix, x2, y2, z1, x2, y2, z2, r, g, b, a);
         drawLine(buf, matrix, x2, y2, z2, x1, y2, z2, r, g, b, a);
         drawLine(buf, matrix, x1, y2, z2, x1, y2, z1, r, g, b, a);
 
+        // Vertical edges
         drawLine(buf, matrix, x1, y1, z1, x1, y2, z1, r, g, b, a);
         drawLine(buf, matrix, x2, y1, z1, x2, y2, z1, r, g, b, a);
         drawLine(buf, matrix, x2, y1, z2, x2, y2, z2, r, g, b, a);
@@ -223,15 +240,35 @@ public class BlockHighlightRenderer {
         return val;
     }
 
-    private static void drawLine(VertexConsumer buf, MatrixStack.Entry matrix,
+    private static final float LINE_THICKNESS = 0.01f;
+
+    /**
+     * Draws a single edge as a thin quad in TRIANGLE_STRIP order through the custom POSITION_COLOR layer
+     * (the vanilla LINES render type needs a per-vertex line-width element our VertexConsumer cannot supply,
+     * so we expand edges into geometry instead). Leading/trailing degenerate vertices isolate each edge.
+     */
+    private static void drawLine(VertexConsumer buf, PoseStack.Pose matrix,
                                  float x1, float y1, float z1, float x2, float y2, float z2,
                                  float r, float g, float b, float a) {
-        float dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
-        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (len < 1e-6f) len = 1.0f;
-        float nx = dx / len, ny = dy / len, nz = dz / len;
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float dz = z2 - z1;
 
-        buf.vertex(matrix, x1, y1, z1).color(r, g, b, a).normal(matrix, nx, ny, nz).lineWidth(1.0f);
-        buf.vertex(matrix, x2, y2, z2).color(r, g, b, a).normal(matrix, nx, ny, nz).lineWidth(1.0f);
+        float ox = 0f, oy = 0f, oz = 0f;
+        float d = LINE_THICKNESS;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > Math.abs(dz)) {
+            oy = d;
+        } else if (Math.abs(dy) >= Math.abs(dx) && Math.abs(dy) > Math.abs(dz)) {
+            ox = d;
+        } else {
+            oy = d;
+        }
+
+        buf.addVertex(matrix, x1 - ox, y1 - oy, z1 - oz).setColor(r, g, b, a);
+        buf.addVertex(matrix, x1 - ox, y1 - oy, z1 - oz).setColor(r, g, b, a);
+        buf.addVertex(matrix, x2 - ox, y2 - oy, z2 - oz).setColor(r, g, b, a);
+        buf.addVertex(matrix, x1 + ox, y1 + oy, z1 + oz).setColor(r, g, b, a);
+        buf.addVertex(matrix, x2 + ox, y2 + oy, z2 + oz).setColor(r, g, b, a);
+        buf.addVertex(matrix, x2 + ox, y2 + oy, z2 + oz).setColor(r, g, b, a);
     }
 }

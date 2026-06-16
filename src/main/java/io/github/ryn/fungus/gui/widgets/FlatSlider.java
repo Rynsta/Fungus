@@ -1,25 +1,25 @@
 package io.github.ryn.fungus.gui.widgets;
 
 import io.github.ryn.fungus.gui.Theme;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.widget.SliderWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.network.chat.Component;
 
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 
-public class FlatSlider extends SliderWidget {
-    private final Text label;
+public class FlatSlider extends AbstractSliderButton {
+    private final Component label;
     private final DoubleSupplier getter;
     private final DoubleConsumer setter;
     private final double min, max;
-    private final TextRenderer tr;
+    private final Font tr;
 
-    public FlatSlider(int x, int y, int w, int h, TextRenderer tr, Text label,
+    public FlatSlider(int x, int y, int w, int h, Font tr, Component label,
                       DoubleSupplier getter, DoubleConsumer setter, double min, double max) {
-        super(x, y, w, h, Text.empty(), normalize(getter.getAsDouble(), min, max));
+        super(x, y, w, h, Component.empty(), normalize(getter.getAsDouble(), min, max));
         this.label = label;
         this.getter = getter;
         this.setter = setter;
@@ -48,7 +48,7 @@ public class FlatSlider extends SliderWidget {
     }
 
     @Override
-    public void renderWidget(DrawContext ctx, int mx, int my, float delta) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor ctx, int mx, int my, float delta) {
         boolean hovered = isHovered();
         int x0 = getX(), y0 = getY(), x1 = getRight(), y1 = getY() + getHeight();
 
@@ -62,16 +62,16 @@ public class FlatSlider extends SliderWidget {
         int knobX = Math.max(x0, Math.min(x1 - 2, fillX - 1));
         ctx.fill(knobX, trackY - 2, knobX + 2, trackY + 3, Theme.ACCENT);
 
-        ctx.drawText(tr, label, x0 + 8, y0 + 4, Theme.TEXT, false);
+        ctx.text(tr, label, x0 + 8, y0 + 4, Theme.TEXT, false);
 
         double v = min + (max - min) * this.value;
         String val = String.format("%.2f", v);
-        int valW = tr.getWidth(val);
-        ctx.drawText(tr, val, x1 - 8 - valW, y0 + 4, Theme.ACCENT, false);
+        int valW = tr.width(val);
+        ctx.text(tr, val, x1 - 8 - valW, y0 + 4, Theme.ACCENT, false);
     }
 
     @Override
-    public void appendClickableNarrations(NarrationMessageBuilder builder) {
-        appendDefaultNarrations(builder);
+    public void updateWidgetNarration(NarrationElementOutput builder) {
+        defaultButtonNarrationText(builder);
     }
 }

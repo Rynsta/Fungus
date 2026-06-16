@@ -1,26 +1,26 @@
 package io.github.ryn.fungus.gui.widgets;
 
 import io.github.ryn.fungus.gui.Theme;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.network.chat.Component;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
-public class FlatToggle extends ClickableWidget {
-    private final Text label;
+public class FlatToggle extends AbstractWidget {
+    private final Component label;
     private final BooleanSupplier getter;
     private final Consumer<Boolean> setter;
-    private final TextRenderer tr;
+    private final Font tr;
 
     private static final int TOGGLE_W = 20;
     private static final int TOGGLE_H = 10;
 
-    public FlatToggle(int x, int y, int w, int h, TextRenderer tr, Text label,
+    public FlatToggle(int x, int y, int w, int h, Font tr, Component label,
                       BooleanSupplier getter, Consumer<Boolean> setter) {
         super(x, y, w, h, label);
         this.label = label;
@@ -30,7 +30,7 @@ public class FlatToggle extends ClickableWidget {
     }
 
     @Override
-    public void renderWidget(DrawContext ctx, int mx, int my, float delta) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor ctx, int mx, int my, float delta) {
         boolean on = getter.getAsBoolean();
         boolean hovered = isHovered();
         int x0 = getX(), y0 = getY(), x1 = getRight(), y1 = getY() + getHeight();
@@ -41,7 +41,7 @@ public class FlatToggle extends ClickableWidget {
         }
 
         int textColor = on ? Theme.TEXT_BRIGHT : Theme.TEXT_OFF;
-        ctx.drawText(tr, label, x0 + 8, y0 + (getHeight() - tr.fontHeight) / 2, textColor, false);
+        ctx.text(tr, label, x0 + 8, y0 + (getHeight() - tr.lineHeight) / 2, textColor, false);
 
         int tx = x1 - TOGGLE_W - 6;
         int ty = y0 + (getHeight() - TOGGLE_H) / 2;
@@ -56,12 +56,12 @@ public class FlatToggle extends ClickableWidget {
     }
 
     @Override
-    public void onClick(Click click, boolean doubled) {
+    public void onClick(MouseButtonEvent click, boolean doubled) {
         setter.accept(!getter.getAsBoolean());
     }
 
     @Override
-    public void appendClickableNarrations(NarrationMessageBuilder builder) {
-        appendDefaultNarrations(builder);
+    protected void updateWidgetNarration(NarrationElementOutput builder) {
+        defaultButtonNarrationText(builder);
     }
 }

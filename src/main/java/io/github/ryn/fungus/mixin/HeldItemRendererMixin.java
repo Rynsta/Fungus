@@ -2,15 +2,15 @@ package io.github.ryn.fungus.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import io.github.ryn.fungus.feature.Viewmodel;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.render.command.OrderedRenderCommandQueue;
-import net.minecraft.client.render.item.HeldItemRenderer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Arm;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.ItemInHandRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,20 +18,20 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(HeldItemRenderer.class)
+@Mixin(ItemInHandRenderer.class)
 public class HeldItemRendererMixin {
-    @Shadow private float equipProgressMainHand;
-    @Shadow private float equipProgressOffHand;
-    @Shadow private float lastEquipProgressMainHand;
-    @Shadow private float lastEquipProgressOffHand;
+    @Shadow private float mainHandHeight;
+    @Shadow private float offHandHeight;
+    @Shadow private float oMainHandHeight;
+    @Shadow private float oOffHandHeight;
 
     @Inject(
-            method = "renderFirstPersonItem",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/math/MatrixStack;push()V", shift = At.Shift.AFTER)
+            method = "renderArmWithItem",
+            at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;pushPose()V", shift = At.Shift.AFTER)
     )
-    private void fungus$beforeRenderItem(AbstractClientPlayerEntity player, float tickProgress, float pitch, Hand hand,
-                                         float swingProgress, ItemStack item, float equipProgress, MatrixStack matrices,
-                                         OrderedRenderCommandQueue queue, int light, CallbackInfo ci) {
+    private void fungus$beforeRenderItem(AbstractClientPlayer player, float tickProgress, float pitch, InteractionHand hand,
+                                         float swingProgress, ItemStack item, float equipProgress, PoseStack matrices,
+                                         SubmitNodeCollector queue, int light, CallbackInfo ci) {
         if (!Viewmodel.isActive()) return;
         if (!Viewmodel.applyToHand && item.isEmpty()) return;
 
@@ -40,27 +40,27 @@ public class HeldItemRendererMixin {
         double oz = Viewmodel.offsetZ;
         if (ox == 0.0 && oy == 0.0 && oz == 0.0) return;
 
-        float sign = (hand == Hand.MAIN_HAND) ? 1f : -1f;
+        float sign = (hand == InteractionHand.MAIN_HAND) ? 1f : -1f;
         matrices.translate(sign * ox, oy, oz);
     }
 
     @Inject(
-            method = "renderFirstPersonItem",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/item/HeldItemRenderer;renderItem(Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/item/ItemStack;Lnet/minecraft/item/ItemDisplayContext;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/command/OrderedRenderCommandQueue;I)V")
+            method = "renderArmWithItem",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemDisplayContext;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V")
     )
-    private void fungus$onRenderItem(AbstractClientPlayerEntity player, float tickProgress, float pitch, Hand hand,
-                                     float swingProgress, ItemStack item, float equipProgress, MatrixStack matrices,
-                                     OrderedRenderCommandQueue queue, int light, CallbackInfo ci) {
+    private void fungus$onRenderItem(AbstractClientPlayer player, float tickProgress, float pitch, InteractionHand hand,
+                                     float swingProgress, ItemStack item, float equipProgress, PoseStack matrices,
+                                     SubmitNodeCollector queue, int light, CallbackInfo ci) {
         if (!Viewmodel.isActive()) return;
         applyRotAndScale(matrices);
     }
 
     @Inject(
-            method = "renderArmHoldingItem",
+            method = "renderPlayerArm",
             at = @At("HEAD")
     )
-    private void fungus$beforeRenderHand(MatrixStack matrices, OrderedRenderCommandQueue queue, int light,
-                                         float equipProgress, float swingProgress, Arm arm, CallbackInfo ci) {
+    private void fungus$beforeRenderHand(PoseStack matrices, SubmitNodeCollector queue, int light,
+                                         float equipProgress, float swingProgress, HumanoidArm arm, CallbackInfo ci) {
         if (!Viewmodel.isActive() || !Viewmodel.applyToHand) return;
 
         double ox = Viewmodel.offsetX;
@@ -68,25 +68,25 @@ public class HeldItemRendererMixin {
         double oz = Viewmodel.offsetZ;
         if (ox == 0.0 && oy == 0.0 && oz == 0.0) return;
 
-        float sign = (arm == Arm.RIGHT) ? 1f : -1f;
+        float sign = (arm == HumanoidArm.RIGHT) ? 1f : -1f;
         matrices.translate(sign * ox, oy, oz);
     }
 
     @Inject(
-            method = "renderArmHoldingItem",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/EntityRenderManager;getPlayerRenderer(Lnet/minecraft/client/network/AbstractClientPlayerEntity;)Lnet/minecraft/client/render/entity/PlayerEntityRenderer;")
+            method = "renderPlayerArm",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;getPlayerRenderer(Lnet/minecraft/client/player/AbstractClientPlayer;)Lnet/minecraft/client/renderer/entity/player/AvatarRenderer;")
     )
-    private void fungus$onRenderHand(MatrixStack matrices, OrderedRenderCommandQueue queue, int light,
-                                     float equipProgress, float swingProgress, Arm arm, CallbackInfo ci) {
+    private void fungus$onRenderHand(PoseStack matrices, SubmitNodeCollector queue, int light,
+                                     float equipProgress, float swingProgress, HumanoidArm arm, CallbackInfo ci) {
         if (!Viewmodel.isActive() || !Viewmodel.applyToHand) return;
         applyRotAndScale(matrices);
     }
 
     @WrapOperation(
             method = "swingArm",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/math/MatrixStack;translate(FFF)V", ordinal = 0)
+            at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;translate(FFF)V", ordinal = 0)
     )
-    private void fungus$onSwingArmTranslate(MatrixStack stack, float x, float y, float z, Operation<Void> original) {
+    private void fungus$onSwingArmTranslate(PoseStack stack, float x, float y, float z, Operation<Void> original) {
         if (Viewmodel.isActive()) {
             original.call(stack, x * (float) Viewmodel.swingX, y * (float) Viewmodel.swingY, z * (float) Viewmodel.swingZ);
         } else {
@@ -95,7 +95,7 @@ public class HeldItemRendererMixin {
     }
 
     @Inject(
-            method = "shouldSkipHandAnimationOnSwap",
+            method = "shouldInstantlyReplaceVisibleItem",
             at = @At("HEAD"),
             cancellable = true
     )
@@ -104,26 +104,26 @@ public class HeldItemRendererMixin {
     }
 
     @Inject(
-            method = "updateHeldItems",
+            method = "tick",
             at = @At("TAIL")
     )
     private void fungus$updateHeldItems(CallbackInfo ci) {
         if (Viewmodel.isActive() && Viewmodel.noEquip) {
-            this.equipProgressMainHand = 1.0f;
-            this.equipProgressOffHand = 1.0f;
-            this.lastEquipProgressMainHand = 1.0f;
-            this.lastEquipProgressOffHand = 1.0f;
+            this.mainHandHeight = 1.0f;
+            this.offHandHeight = 1.0f;
+            this.oMainHandHeight = 1.0f;
+            this.oOffHandHeight = 1.0f;
         }
     }
 
-    private static void applyRotAndScale(MatrixStack matrices) {
+    private static void applyRotAndScale(PoseStack matrices) {
         double rx = Viewmodel.rotX;
         double ry = Viewmodel.rotY;
         double rz = Viewmodel.rotZ;
         if (rx != 0.0 || ry != 0.0 || rz != 0.0) {
-            matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees((float) rx));
-            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) ry));
-            matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees((float) rz));
+            matrices.mulPose(Axis.XP.rotationDegrees((float) rx));
+            matrices.mulPose(Axis.YP.rotationDegrees((float) ry));
+            matrices.mulPose(Axis.ZP.rotationDegrees((float) rz));
         }
         double sx = Viewmodel.scaleX;
         double sy = Viewmodel.scaleY;

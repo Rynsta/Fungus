@@ -2,26 +2,26 @@ package io.github.ryn.fungus.gui.widgets;
 
 import io.github.ryn.fungus.gui.Theme;
 import io.github.ryn.fungus.module.Module;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.network.chat.Component;
 
 import java.util.function.Consumer;
 
-public class ModuleRowWidget extends ClickableWidget {
+public class ModuleRowWidget extends AbstractWidget {
     private final Module module;
     private final Consumer<Module> onOpenSettings;
-    private final TextRenderer tr;
+    private final Font tr;
 
     private static final int SETTINGS_AREA_W = 28;
     private static final int TOGGLE_W        = 22;
     private static final int TOGGLE_H        = 11;
     private static final int ACCENT_STRIPE_W = 3;
 
-    public ModuleRowWidget(int x, int y, int w, int h, TextRenderer tr,
+    public ModuleRowWidget(int x, int y, int w, int h, Font tr,
                            Module module, Consumer<Module> onOpenSettings) {
         super(x, y, w, h, module.displayName());
         this.module = module;
@@ -30,7 +30,7 @@ public class ModuleRowWidget extends ClickableWidget {
     }
 
     @Override
-    public void renderWidget(DrawContext ctx, int mx, int my, float delta) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor ctx, int mx, int my, float delta) {
         boolean on = module.isEnabled();
         boolean hovered = isHovered();
         boolean overSettings = module.hasSettings() && mx >= getRight() - SETTINGS_AREA_W && hovered;
@@ -48,8 +48,8 @@ public class ModuleRowWidget extends ClickableWidget {
         }
 
         int textColor = on ? Theme.TEXT_BRIGHT : Theme.TEXT_OFF;
-        ctx.drawText(tr, module.displayName(), x0 + 10,
-                y0 + (getHeight() - tr.fontHeight) / 2, textColor, false);
+        ctx.text(tr, module.displayName(), x0 + 10,
+                y0 + (getHeight() - tr.lineHeight) / 2, textColor, false);
 
         int toggleX = module.hasSettings()
                 ? x1 - SETTINGS_AREA_W - TOGGLE_W - 10
@@ -64,7 +64,7 @@ public class ModuleRowWidget extends ClickableWidget {
         }
     }
 
-    private static void drawToggle(DrawContext ctx, int x, int y, boolean on) {
+    private static void drawToggle(GuiGraphicsExtractor ctx, int x, int y, boolean on) {
         if (on) {
             ctx.fill(x, y, x + TOGGLE_W, y + TOGGLE_H, Theme.ACCENT);
             ctx.fill(x + TOGGLE_W - TOGGLE_H, y + 2,
@@ -77,7 +77,7 @@ public class ModuleRowWidget extends ClickableWidget {
         }
     }
 
-    private static void drawCog(DrawContext ctx, int x, int y, boolean overSettings, boolean hovered) {
+    private static void drawCog(GuiGraphicsExtractor ctx, int x, int y, boolean overSettings, boolean hovered) {
         int color = overSettings ? Theme.ACCENT : Theme.TEXT_DIM;
         ctx.fill(x + 3, y, x + 6, y + 2, color);
         ctx.fill(x + 3, y + 7, x + 6, y + 9, color);
@@ -89,7 +89,7 @@ public class ModuleRowWidget extends ClickableWidget {
     }
 
     @Override
-    public void onClick(Click click, boolean doubled) {
+    public void onClick(MouseButtonEvent click, boolean doubled) {
         if (module.hasSettings() && click.x() >= getRight() - SETTINGS_AREA_W) {
             onOpenSettings.accept(module);
         } else {
@@ -98,12 +98,12 @@ public class ModuleRowWidget extends ClickableWidget {
     }
 
     @Override
-    public Text getMessage() {
+    public Component getMessage() {
         return module.displayName();
     }
 
     @Override
-    public void appendClickableNarrations(NarrationMessageBuilder builder) {
-        appendDefaultNarrations(builder);
+    public void updateWidgetNarration(NarrationElementOutput builder) {
+        defaultButtonNarrationText(builder);
     }
 }

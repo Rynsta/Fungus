@@ -1,12 +1,12 @@
 package io.github.ryn.fungus.module;
 
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 public interface Module {
     String id();
 
-    Text displayName();
+    Component displayName();
 
     boolean isEnabled();
 
